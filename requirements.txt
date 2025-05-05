@@ -17,3 +17,5 @@ torchvision
 matplotlib
 seaborn
 gradio
+transformers
+pillow
