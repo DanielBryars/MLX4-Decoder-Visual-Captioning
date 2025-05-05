@@ -18,6 +18,11 @@ import pandas as pd
 import datasets
 import json
 from huggingface_hub import hf_hub_url
+import transformers
+from torchvision import transforms
+from torch.utils.data import DataLoader
+
+from dataset import FlickrDataset
 
 _INPUT_CSV = "flickr_annotations_30k.csv"
 _INPUT_IMAGES = "flickr30k-images"
@@ -72,20 +77,34 @@ class FlickrDataset(datasets.GeneratorBasedBuilder):
 
 if __name__ == "__main__":
 
-    # Initialize the dataset
+    print("Loading Flickr Dataset")
     builder = FlickrDataset()
-    
     builder.download_and_prepare()
-    
+    print("Flickr Dataset Loaded")
+
+    resize = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+    ])
+
+    def transform_fn(batch):
+        batch["image"] = [resize(item) for item in batch["image"]]
+        return batch
+
     dataset = builder.as_dataset(split="test")
+    dataset.set_transform(transform_fn)
 
-    from torch.utils.data import DataLoader
-
-    # Create a DataLoader
     dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
 
     # Example iteration
-    for images, captions in dataloader:
-        print(captions[0])
-        break
+    for batch in dataloader:
+        
+        #print(captions[0])
+        images = batch["image"]
+        captions = batch["caption"]
 
+        print(images.shape)                         # Should be torch.Size([32, 3, 224, 224])
+        print(len(captions))                        # Should be 32
+        print(len(captions[0]))                     # Should be 5
+        #print(captions[0])   
+        break
