@@ -3,7 +3,7 @@ import transformers
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-from dataset import FlickrDataset
+from FlickrDataset import FlickrDataset
 
 #https://huggingface.co/openai/clip-vit-base-patch32
 model = transformers.CLIPModel.from_pretrained("openai/clip-vit-base-patch32")

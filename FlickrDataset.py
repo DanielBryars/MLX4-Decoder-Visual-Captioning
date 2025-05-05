@@ -22,7 +22,7 @@ import transformers
 from torchvision import transforms
 from torch.utils.data import DataLoader
 
-from dataset import FlickrDataset
+from FlickrDataset import FlickrDataset
 
 _INPUT_CSV = "flickr_annotations_30k.csv"
 _INPUT_IMAGES = "flickr30k-images"
