@@ -49,6 +49,8 @@ def transform_fn(batch):
     return batch
 
 dataset = builder.as_dataset(split="test")
+
+
 dataset.set_transform(transform_fn)
 
 dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
@@ -68,7 +70,7 @@ for batch in dataloader:
     #.to(device)
 
     with torch.no_grad():
-        image_features = model.get_image_features(pixel_values=batch)
+        image_features = model.get_image_features(pixel_values=batch["image"])
 
     break
 
