@@ -174,6 +174,7 @@ for batch in tqdm(dataloader):
 
 
     logits = decoder(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
+    assert logits.shape == (32, 76, 49408) #49408 vocab
 
     loss = nn.CrossEntropyLoss()(
         logits.reshape(-1, logits.size(-1)),  # [B*T, V]
