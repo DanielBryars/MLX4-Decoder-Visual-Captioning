@@ -17,7 +17,3 @@ class PositionalEncoding(nn.Module):
 
     def forward(self, x):
         return x + self.pe[:, :x.size(1)].to(x.device)
-
-
-
-

@@ -27,7 +27,10 @@ count_params = lambda m: sum(p.numel() for p in m.parameters())
 
 print("Loading Flickr Dataset")
 builder = FlickrDataset()
+
 builder.download_and_prepare()
+
+
 print("Flickr Dataset Loaded")
 
 
