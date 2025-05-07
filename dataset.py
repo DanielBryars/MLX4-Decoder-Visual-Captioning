@@ -28,10 +28,10 @@ dataset.set_transform(transform_fn)
 
 split_dataset = dataset.train_test_split(test_size=0.2)
 
-train_dataset = split_dataset['train']
+train_data = split_dataset['train']
 test_data = split_dataset['test']
 
 if __name__ == "__main__":
-    print(f"len(train_dataset):{len(train_dataset)}")
+    print(f"len(train_dataset):{len(train_data)}")
     print(f"len(test_data):{len(test_data)}")
     

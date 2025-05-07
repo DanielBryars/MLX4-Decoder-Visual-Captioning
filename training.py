@@ -69,7 +69,7 @@ def evaluate(
             total_loss += loss
             total_batches += 1
             loop.set_postfix(loss=loss.item())
-            
+
     avg_loss = total_loss / total_batches if total_batches > 0 else float('nan')
     accuracy = total_correct / total_samples if total_samples > 0 else float('nan')
 
@@ -92,9 +92,11 @@ def train_one_epoch(
     step = step_offset
 
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Train]", leave=False)
-    for batch in loop:
+    for batch in loop:        
         images = batch["image"].to(device)
         captions = batch["caption"]
+
+        batch_size = images.shape[0]
 
         # Use first caption for now
         # TODO use all captions
@@ -105,7 +107,7 @@ def train_one_epoch(
 
         clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
         clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
-        clip_bos_embed = clip_bos_embed.repeat(32, 1, 1)
+        clip_bos_embed = clip_bos_embed.repeat(batch_size, 1, 1)
         
         with torch.no_grad():
             caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that

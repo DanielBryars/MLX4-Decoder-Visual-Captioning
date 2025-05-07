@@ -35,7 +35,13 @@ class CaptionTransformerDecoder(nn.Module):
         Returns:
             logits: [B, T, vocab_size]
         """
+        print(f"image_embeds.shape:{image_embeds.shape}")
         image_embeds = self.image_proj(image_embeds)
+        print(f"image_embeds.shape:{image_embeds.shape}")
+
+        print(f"bos_embed.shape:{bos_embed.shape}")
+        print(f"caption_embeds.shape:{caption_embeds.shape}")
+
 
         B, T, D = caption_embeds.shape
         device = caption_embeds.device
