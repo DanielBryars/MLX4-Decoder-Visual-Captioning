@@ -34,14 +34,21 @@ def evaluate(
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Val]", leave=False)
     with torch.no_grad():
         for batch in loop:
-            loss = ForwardThroughModel(model, tokeniser, clip_model, device, batch)
+            images = batch["image"].to(device)
+            captions = batch["caption"]
 
-            total_loss += loss
-            total_batches += 1
+            for i in range(captions.shape[0]):
+                caption_texts = captions[i]
+                loss = ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts)
+
+                total_loss += loss
+                total_batches += 1
             
-            wandb.log({'val/loss': loss.item()}, step=step)
-            loop.set_postfix(loss=loss.item())
-
+                wandb.log({'val/loss': loss.item()}, step=step)
+                loop.set_postfix(loss=loss.item())
+            
+                if step is not None:
+                    step += 1
 
     avg_loss = total_loss / total_batches if total_batches > 0 else float('nan')
     accuracy = total_correct / total_samples if total_samples > 0 else float('nan')
@@ -66,27 +73,25 @@ def train_one_epoch(
 
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Train]", leave=False)
     for batch in loop:        
-        loss = ForwardThroughModel(model, tokeniser, clip_model, device, batch)
 
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
+        images = batch["image"].to(device)
+        captions = batch["caption"]
 
-        wandb.log({'train/loss': loss.item()}, step=step)
-        loop.set_postfix(loss=f"{loss.item():.4f}")
+        for i in range(captions.shape[0]):
+            caption_texts = captions[i]
+            loss = ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts)
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+
+            wandb.log({'train/loss': loss.item()}, step=step)
+            loop.set_postfix(loss=f"{loss.item():.4f}")
+            step += 1
 
     return step
 
-def ForwardThroughModel(model, tokeniser, clip_model, device, batch):
-    images = batch["image"].to(device)
-    captions = batch["caption"]
-
+def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts):
     batch_size = images.shape[0]
-
-        # Use first caption for now
-        # TODO use all captions
-    caption_texts = captions[0] # [cap[0] for cap in captions]
-        
     tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
     caption_token_ids = tokenised["input_ids"]
 
