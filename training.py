@@ -63,12 +63,13 @@ def train_one_epoch(
         captions = batch["caption"]
 
         # Use first caption for now
+        # TODO use all captions
         caption_texts = captions[0] # [cap[0] for cap in captions]
-        tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
-        caption_token_ids = tokenised["input_ids"]  # (B, 77)
-
-        clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # usually ID 0
         
+        tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
+        caption_token_ids = tokenised["input_ids"]
+
+        clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
         clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
         clip_bos_embed = clip_bos_embed.repeat(32, 1, 1)
         
@@ -76,7 +77,7 @@ def train_one_epoch(
             caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids)
             caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
             
-            image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768)    
+            image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
 
         logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
         

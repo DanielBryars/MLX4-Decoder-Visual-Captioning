@@ -50,17 +50,17 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 clip_model.to(device)
 
-decoder = CaptionTransformerDecoder(
+model = CaptionTransformerDecoder(
     embed_dim=D_txt,
     vocab_size=tokenizer.vocab_size
 ).to(device)
-decoder.train()
+
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=hyperparameters['batch_size'])
 val_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=hyperparameters['batch_size'])
 
 optimizer = torch.optim.Adam(
-    decoder.parameters(),
+    model.parameters(),
     lr=hyperparameters['learning_rate'], 
     weight_decay=hyperparameters['weight_decay']
 )
@@ -70,7 +70,19 @@ best_val_loss = float('inf')
 epochs_no_improve = 0
 patience= hyperparameters['patience']
 epoch_pbar = tqdm(range(1, hyperparameters['num_epochs'] + 1))
+
 for epoch in epoch_pbar:
     step = train_one_epoch(model, train_loader, optimizer, device, epoch, step_offset=step)
     val_loss, accuracy  = evaluate(model, val_loader, device, epoch=epoch, step=step)
 
+    print(f"Epoch {epoch} complete | Val Loss: {val_loss:.4f} | Accuracy: {accuracy:.4f}")
+    if val_loss < best_val_loss:
+        best_val_loss = val_loss
+        epochs_no_improve = 0
+        save_checkpoint(model, hyperparameters, epoch, ts)
+    else:
+        epochs_no_improve += 1
+        print(f"No improvement. Early stop patience: {epochs_no_improve}/{patience}")
+    if epochs_no_improve >= patience:
+        print("Early stopping triggered.")
+        break
