@@ -20,7 +20,6 @@ def evaluate(
         dataloader, 
         tokeniser, 
         clip_model, 
-        optimizer, 
         device, 
         epoch=None, 
         step=None):
@@ -35,47 +34,21 @@ def evaluate(
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Val]", leave=False)
     with torch.no_grad():
         for batch in loop:
-            images = batch["image"].to(device)
-            captions = batch["caption"]
-
-            # Use first caption for now
-            # TODO use all captions
-            caption_texts = captions[0] # [cap[0] for cap in captions]
-            
-            tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
-            caption_token_ids = tokenised["input_ids"]
-
-            clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
-            clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
-            clip_bos_embed = clip_bos_embed.repeat(32, 1, 1)
-            
-            with torch.no_grad():
-                caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that
-                caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
-                
-                image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
-
-            logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
-            
-            assert tokeniser.vocab_size == logits.shape[2]
-
-            labels = caption_token_ids[:, 1:]
-
-            loss = nn.CrossEntropyLoss()(
-                logits.reshape(-1, logits.size(-1)),
-                labels.reshape(-1)
-            )
+            loss = ForwardThroughModel(model, tokeniser, clip_model, device, batch)
 
             total_loss += loss
             total_batches += 1
+            
+            wandb.log({'val/loss': loss.item()}, step=step)
             loop.set_postfix(loss=loss.item())
+
 
     avg_loss = total_loss / total_batches if total_batches > 0 else float('nan')
     accuracy = total_correct / total_samples if total_samples > 0 else float('nan')
 
     if step is not None:
-        wandb.log({'val/loss': avg_loss, 'val/accuracy': accuracy}, step=step)
-
+        wandb.log({'val/avg_loss': avg_loss, 'val/avg_accuracy': accuracy}, step=step)
+    
     return avg_loss,accuracy
 
 def train_one_epoch(
@@ -93,37 +66,49 @@ def train_one_epoch(
 
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Train]", leave=False)
     for batch in loop:        
-        images = batch["image"].to(device)
-        captions = batch["caption"]
+        loss = ForwardThroughModel(model, tokeniser, clip_model, device, batch)
 
-        batch_size = images.shape[0]
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        wandb.log({'train/loss': loss.item()}, step=step)
+        loop.set_postfix(loss=f"{loss.item():.4f}")
+
+    return step
+
+def ForwardThroughModel(model, tokeniser, clip_model, device, batch):
+    images = batch["image"].to(device)
+    captions = batch["caption"]
+
+    batch_size = images.shape[0]
 
         # Use first caption for now
         # TODO use all captions
-        caption_texts = captions[0] # [cap[0] for cap in captions]
+    caption_texts = captions[0] # [cap[0] for cap in captions]
         
-        tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
-        caption_token_ids = tokenised["input_ids"]
+    tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
+    caption_token_ids = tokenised["input_ids"]
 
-        clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
-        clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
-        clip_bos_embed = clip_bos_embed.repeat(batch_size, 1, 1)
+    clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
+    clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
+    clip_bos_embed = clip_bos_embed.repeat(batch_size, 1, 1)
         
-        with torch.no_grad():
-            caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that
-            caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
+    with torch.no_grad():
+        caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that
+        caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
             
-            image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
+        image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
 
-        logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
-        assert tokeniser.vocab_size == logits.shape[2]
+    logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
+    assert tokeniser.vocab_size == logits.shape[2]
 
         #labels = caption_token_ids[:, 1:]
-        labels = caption_token_ids[:, 1:1 + caption_embeddings.shape[1]]
+    labels = caption_token_ids[:, 1:1 + caption_embeddings.shape[1]]
 
 
-        logits_reshaped = logits.reshape(-1, logits.size(-1))
-        labels_reshaped = labels.reshape(-1)
+    logits_reshaped = logits.reshape(-1, logits.size(-1))
+    labels_reshaped = labels.reshape(-1)
 
         #print(f"logits.shape: {logits.shape}")
         #print(f"logits_reshaped.shape: {logits_reshaped.shape}")
@@ -131,18 +116,11 @@ def train_one_epoch(
         #print(f"labels.shape: {labels.shape}")
         #print(f"labels_reshaped.shape: {labels_reshaped.shape}")
 
-        loss = nn.CrossEntropyLoss()(
+    loss = nn.CrossEntropyLoss()(
             logits_reshaped,
-            labels_reshaped
-        )
-
-        loss.backward()
-        optimizer.step()
-        optimizer.zero_grad()
-
-        loop.set_postfix(loss=f"{loss.item():.4f}")
-
-    return step
+            labels_reshaped)
+    
+    return loss
 
 def save_checkpoint(model, hyperparameters, epoch, ts):
     checkpoint_dir = './checkpoints'

@@ -32,7 +32,7 @@ set_seed()
 hyperparameters = {
         'learning_rate': 1e-4,
         'weight_decay': 0.01,
-        'batch_size': 32,
+        'batch_size': 64,
         'patience': 3,
         'num_transformer_blocks': 2,
         'num_heads':2,
@@ -40,7 +40,7 @@ hyperparameters = {
         'num_epochs':5
 }
 
-wandb.init(project='MLX7-W4-VIT-CAPTIONS', config=hyperparameters)
+wandb.init(project='MLX7-W4-VIT-CAPTIONS-01', config=hyperparameters)
 config = wandb.config
 
 D_img = 768
@@ -73,8 +73,8 @@ patience= hyperparameters['patience']
 epoch_pbar = tqdm(range(1, hyperparameters['num_epochs'] + 1))
 
 for epoch in epoch_pbar:
-    step = train_one_epoch(model, train_loader, tokenizer, clip_model, optimizer, device, epoch, step_offset=step)
-    val_loss, accuracy  = evaluate(model, val_loader, tokenizer, clip_model, device, epoch=epoch, step=step)
+    step = train_one_epoch          (model, train_loader, tokenizer, clip_model, optimizer, device, epoch, step_offset=step)
+    val_loss, accuracy  = evaluate  (model, val_loader, tokenizer, clip_model, device, epoch=epoch, step=step)
 
     print(f"Epoch {epoch} complete | Val Loss: {val_loss:.4f} | Accuracy: {accuracy:.4f}")
     if val_loss < best_val_loss:
