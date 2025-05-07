@@ -116,14 +116,24 @@ def train_one_epoch(
             image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
 
         logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
-        
         assert tokeniser.vocab_size == logits.shape[2]
 
-        labels = caption_token_ids[:, 1:]
+        #labels = caption_token_ids[:, 1:]
+        labels = caption_token_ids[:, 1:1 + caption_embeddings.shape[1]]
+
+
+        logits_reshaped = logits.reshape(-1, logits.size(-1))
+        labels_reshaped = labels.reshape(-1)
+
+        #print(f"logits.shape: {logits.shape}")
+        #print(f"logits_reshaped.shape: {logits_reshaped.shape}")
+
+        #print(f"labels.shape: {labels.shape}")
+        #print(f"labels_reshaped.shape: {labels_reshaped.shape}")
 
         loss = nn.CrossEntropyLoss()(
-            logits.reshape(-1, logits.size(-1)),
-            labels.reshape(-1)
+            logits_reshaped,
+            labels_reshaped
         )
 
         loss.backward()
