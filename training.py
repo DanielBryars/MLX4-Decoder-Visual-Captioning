@@ -5,6 +5,7 @@ from tqdm import tqdm
 import torch.nn.functional as F
 import random
 import numpy as np
+import torch.nn as nn
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -14,7 +15,16 @@ def set_seed(seed=42):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def evaluate(model, dataloader, device, epoch=None, step=None):
+def evaluate(
+        model,
+        dataloader, 
+        tokeniser, 
+        clip_model, 
+        optimizer, 
+        device, 
+        epoch=None, 
+        step=None):
+    
     model.eval()
     
     total_loss = 0.0
@@ -25,17 +35,41 @@ def evaluate(model, dataloader, device, epoch=None, step=None):
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Val]", leave=False)
     with torch.no_grad():
         for batch in loop:
-            images, labels = [x.to(device) for x in batch]
+            images = batch["image"].to(device)
+            captions = batch["caption"]
 
-            logits = model(images)
-            loss = F.cross_entropy(logits, labels)
-            preds = logits.argmax(dim=1)
-            total_correct += (preds == labels).sum().item()
-            total_samples += labels.size(0)
-            total_loss += loss.item()
+            # Use first caption for now
+            # TODO use all captions
+            caption_texts = captions[0] # [cap[0] for cap in captions]
+            
+            tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
+            caption_token_ids = tokenised["input_ids"]
+
+            clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
+            clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)
+            clip_bos_embed = clip_bos_embed.repeat(32, 1, 1)
+            
+            with torch.no_grad():
+                caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that
+                caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
+                
+                image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
+
+            logits = model(image_embeddings, clip_bos_embed, caption_embeddings) #:, :-1 ??
+            
+            assert tokeniser.vocab_size == logits.shape[2]
+
+            labels = caption_token_ids[:, 1:]
+
+            loss = nn.CrossEntropyLoss()(
+                logits.reshape(-1, logits.size(-1)),
+                labels.reshape(-1)
+            )
+
+            total_loss += loss
             total_batches += 1
             loop.set_postfix(loss=loss.item())
-
+            
     avg_loss = total_loss / total_batches if total_batches > 0 else float('nan')
     accuracy = total_correct / total_samples if total_samples > 0 else float('nan')
 
@@ -57,8 +91,8 @@ def train_one_epoch(
     model.train()
     step = step_offset
 
-    pbar = tqdm(dataloader)
-    for batch in pbar:
+    loop = tqdm(dataloader, desc=f"Epoch {epoch} [Train]", leave=False)
+    for batch in loop:
         images = batch["image"].to(device)
         captions = batch["caption"]
 
@@ -74,7 +108,7 @@ def train_one_epoch(
         clip_bos_embed = clip_bos_embed.repeat(32, 1, 1)
         
         with torch.no_grad():
-            caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids)
+            caption_embeddings = clip_model.text_model.embeddings(input_ids=caption_token_ids[:, :-1]) #Note [:, :-1] I don't to pass in last token, we're going to predict that
             caption_embeddings = caption_embeddings[:, 1:, :] #strip off the BOS
             
             image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
@@ -83,16 +117,18 @@ def train_one_epoch(
         
         assert tokeniser.vocab_size == logits.shape[2]
 
+        labels = caption_token_ids[:, 1:]
+
         loss = nn.CrossEntropyLoss()(
-            logits.reshape(-1, logits.size(-1)),  # [B*T, V]
-            caption_token_ids[:, 1:].reshape(-1)  # [B*T]
+            logits.reshape(-1, logits.size(-1)),
+            labels.reshape(-1)
         )
 
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
 
-        pbar.set_postfix(loss=f"{loss.item():.4f}")
+        loop.set_postfix(loss=f"{loss.item():.4f}")
 
     return step
 

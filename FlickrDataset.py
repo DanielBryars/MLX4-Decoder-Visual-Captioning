@@ -81,6 +81,8 @@ if __name__ == "__main__":
     builder.download_and_prepare()
     print("Flickr Dataset Loaded")
 
+    print(builder)
+
     resize = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),

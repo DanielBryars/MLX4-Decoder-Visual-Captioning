@@ -20,8 +20,18 @@ def transform_fn(batch):
     batch["image"] = [clip_preprocess(item) for item in batch["image"]]
     return batch
 
-train_data = builder.as_dataset(split="train")
-train_data.set_transform(transform_fn)
 
-test_data = builder.as_dataset(split="test")
-test_data.set_transform(transform_fn)
+from datasets import load_dataset
+
+dataset = builder.as_dataset(split="test") #this is ALL the data even though it says test
+dataset.set_transform(transform_fn)
+
+split_dataset = dataset.train_test_split(test_size=0.2)
+
+train_dataset = split_dataset['train']
+test_data = split_dataset['test']
+
+if __name__ == "__main__":
+    print(f"len(train_dataset):{len(train_dataset)}")
+    print(f"len(test_data):{len(test_data)}")
+    
