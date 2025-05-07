@@ -34,13 +34,13 @@ hyperparameters = {
         'weight_decay': 0.01,
         'batch_size': 64,
         'patience': 3,
-        'num_transformer_blocks': 2,
-        'num_heads':2,
+        'num_layers': 6,
+        'num_heads':8,
         'dropout':0.1,
-        'num_epochs':5
+        'num_epochs':20
 }
 
-wandb.init(project='MLX7-W4-VIT-CAPTIONS-01', config=hyperparameters)
+wandb.init(project='MLX7-W4-VIT-CAPTIONS-100', config=hyperparameters)
 config = wandb.config
 
 D_img = 768
@@ -53,7 +53,11 @@ clip_model.to(device)
 
 model = CaptionTransformerDecoder(
     embed_dim=D_txt,
-    vocab_size=tokenizer.vocab_size
+    vocab_size=tokenizer.vocab_size,
+    num_layers=hyperparameters['num_layers'], 
+    num_heads=hyperparameters['num_heads'], 
+    dropout=hyperparameters['dropout']
+
 ).to(device)
 
 
