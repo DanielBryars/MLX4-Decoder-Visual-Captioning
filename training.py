@@ -34,16 +34,27 @@ def evaluate(
     loop = tqdm(dataloader, desc=f"Epoch {epoch} [Val]", leave=False)
     with torch.no_grad():
         for batch in loop:
+
             images = batch["image"].to(device)
             captions = batch["caption"]
 
-            for caption_texts in captions:
-                loss = ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts)
+            batch_size = images.shape[0]
 
-                total_loss += loss
-                total_batches += 1
+            flat_captions = []
+            num_captions_per_image = len(captions)
             
-                loop.set_postfix(loss=loss.item())
+            for image_idx in range(batch_size):
+                for caption_idx in range(len(captions)):
+                    flat_captions.append(captions[caption_idx][image_idx])
+                
+            images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
+
+            loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions)
+
+            total_loss += loss
+            total_batches += 1
+            
+            loop.set_postfix(loss=loss.item())
             
     avg_loss = total_loss / total_batches if total_batches > 0 else float('nan')
     accuracy = total_correct / total_samples if total_samples > 0 else float('nan')
