@@ -99,7 +99,7 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
             
         image_embeddings = clip_model.vision_model.embeddings(images)  # (B, 50, 768) This includes the CLS at the start   
 
-    logits = model(image_embeddings, None, caption_embeddings) #:, :-1 ??
+    logits = model(image_embeddings, caption_embeddings) #:, :-1 ??
     assert tokeniser.vocab_size == logits.shape[2]
 
     #labels = caption_token_ids[:, 1:caption_embeddings.shape[1]]

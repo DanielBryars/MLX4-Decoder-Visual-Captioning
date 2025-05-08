@@ -1,0 +1,146 @@
+{
+  "train": {
+    "train_0.png": [
+      "Scraggly looking man in blue shirt smoked cigarette in public area with benches.",
+      "A bearded man in jeans and a blue T-shirt smokes as he walks down the street.",
+      "A homeless man is walking down the street with a cigarette in his mouth.",
+      "A bearded man with a cigarette stares at a potted plant.",
+      "A man in a blue shirt smoking a cigarette."
+    ],
+    "train_1.png": [
+      "A yellow barrier and other items block a doorway where a man is looking down.",
+      "A person in a room inspects some sort of equipment.",
+      "A worker is working in an elevator.",
+      "A man is sitting by a window.",
+      "Custodian changes trashcans."
+    ],
+    "train_2.png": [
+      "A bicyclist in yellow leads a pack of other bicyclist in a race",
+      "A group of bike riders are riding in an athletic event.",
+      "A few bike racers riding in a straight line",
+      "Bicyclers riding in a single file line.",
+      "Bicycle riders vie for position."
+    ],
+    "train_3.png": [
+      "A girl wearing pink goggles is underwater as water escapes in the form of bubbles from her mouth and nose.",
+      "An underwater closeup of a young girl with pink goggles exhaling through her nose.",
+      "A caucasian girl with pink goggles and brown hair is blowing bubbles underwater.",
+      "A person in pink water goggles is blowing bubbles underwater.",
+      "Girl with pink goggles blowing bubbles underwater."
+    ],
+    "train_4.png": [
+      "A small girl dressed in yellow wearing flip-flops climbing onto red playground equipment.",
+      "A little girl dressed in yellow is holding onto two red handles.",
+      "A girl begins to climb a red piece of playground equipment.",
+      "A young girl makes her way onto red recreational equipment.",
+      "A little girl climbing at a playground."
+    ],
+    "train_5.png": [
+      "A man and a young boy wearing a G Unit sweatshirt sit for a street artist's drawing.",
+      "A boy in a red shirt is looking towards an easel that an artist has.",
+      "A young boy sits and poses for a street artist to draw his portrait.",
+      "A street artist is drawing a portrait of a young boy",
+      "An artist working on a drawing of a little boy."
+    ],
+    "train_6.png": [
+      "Several people, including a man in a pink and black striped shirt who is taking a picture of something off-camera, are in a city park.",
+      "A man wearing a pink shirt with stripes on it is taking a picture while a man wearing an orange shirt is looking at him.",
+      "A couple of friends hanging out in a park, relaxing and taking pictures.",
+      "A man wearing a striped pink shirt is taking a picture.",
+      "A man at a park is taking pictures."
+    ],
+    "train_7.png": [
+      "A little boy is running on the beach with a red bucket in his hand.",
+      "A boy in a yellow tank top runs away from a crashing wave.",
+      "A child runs away from an approaching wave.",
+      "A kid with a bucket runs from a wave",
+      "A buy with a pale on a beach."
+    ],
+    "train_8.png": [
+      "A man in orange vest with a rifle in one hand and a dead bird in the other smiling.",
+      "A young hunter wearing an orange vest holding a pheasant in a field.",
+      "A hunter is holding a bird in one hand and his gun in the other.",
+      "A young male hunter caught a turkey in the corn field.",
+      "The hunter is proud of this catch of the day."
+    ],
+    "train_9.png": [
+      "A fair haired woman is wearing what appears to be a graduation gown with a flower on her lapel.",
+      "Woman wearing makeup and nail polish in a graduation gown.",
+      "Girl graduating from college with flower necklace on.",
+      "A woman with long hair is at a graduation ceremony.",
+      "Woman in black graduation gown with red flower."
+    ]
+  },
+  "test": {
+    "test_0.png": [
+      "Group of gymnast look on as a girl in a red bodysuit completes a stunt.",
+      "A girl in hot pink leotard is leaping through the air.",
+      "A young girl wearing a pink leotard jump in midair",
+      "The gymnast is wearing a red outfit and jumping.",
+      "A gymnast vaults through the air."
+    ],
+    "test_1.png": [
+      "A man in a yellow coat and neon green safety vest pushes janitorial equipment down a sidewalk.",
+      "A woman walks toward a janitor that's wearing a raincoat and pushing a cleaning cart.",
+      "A garbage man, doing his best to clean up the streets.",
+      "A street cleaner cleaning the street in the rain.",
+      "A worker in a yellow coat pushes a cart."
+    ],
+    "test_2.png": [
+      "A man wearing a yellow shirt and white hard hat stands inside a crevice between two rock faces.",
+      "The rock climber appears to be stuck between a rock and a hard place.",
+      "A man squeezes between two rock formations.",
+      "A climber is between two large red rocks.",
+      "A rock climber standing in a crevasse."
+    ],
+    "test_3.png": [
+      "A little boy jumps in the air while his younger brother looks on.",
+      "The two young boys play in a puddle on a comfortable day.",
+      "Two children are playing in a mud puddle.",
+      "Two little boys play with a puddle.",
+      "Boy jumps through mud puddle."
+    ],
+    "test_4.png": [
+      "Man looking over a large stove full of coal while bursting flames.",
+      "The blacksmith checks the fire pit to see if it is hot enough.",
+      "A man in a white t-shirt looks into a fireplace.",
+      "A man is pulling a chain in a workshop.",
+      "A man smithing in a shop."
+    ],
+    "test_5.png": [
+      "Bill Gates and Steve Jobs sitting in red chairs beside each other.",
+      "Two men on a talk show together sitting in red chairs.",
+      "Steve jobs sits next to bill gates in red chairs.",
+      "Two men sit in red chairs and talk on stage.",
+      "Two men chatting in red armchairs."
+    ],
+    "test_6.png": [
+      "Two men and two women dressed in old English attire hold hands and form a circle on a stage as a young girl runs by.",
+      "Five individuals, three females and two males, are performing a dance in period costume wear outside.",
+      "Two men and two women, in period costumes, performing a dance on state outdoors.",
+      "Two women and two men in historical attire jumping.",
+      "4 people are dressed in costumes dancing on stage."
+    ],
+    "test_7.png": [
+      "A youth on a skateboard is doing flips and tricks over a metal bar.",
+      "A shirtless man is doing a skateboard trick over a bike rail.",
+      "A skateboarder with dreadlocks does a trick on a bike rack.",
+      "Long-haired skateboarder jumping over bike rack in a city.",
+      "A male skateboarder performs a stunt over a bicycle rake."
+    ],
+    "test_8.png": [
+      "Two people go parasailing on the ocean with a beautiful scenic view in the background.",
+      "Two people come close to one another while they kite surf in the ocean on a sunny day.",
+      "Two people crossing paths in the ocean while parasailing during a clear blue day.",
+      "Two people crossing by each other while kite surfing.",
+      "A pair of people parasailing on a sunny day."
+    ],
+    "test_9.png": [
+      "The lady with the red-hair, blue, orange, and maroon jacket is getting photographed by a woman wearing a blue sweater in front of a clothing store, judging by that mannequin.",
+      "A woman wearing handbags standing by a column with artistic painting on it while a young women takes her picture.",
+      "A woman with brown hair is photographing a red-haired woman in front of a painted column.",
+      "A woman is being photographed as she stands next to an artistic monument.",
+      "A girl standing by a decorated structural beam poses for a picture."
+    ]
+  }
+}

@@ -60,6 +60,9 @@ model = CaptionTransformerDecoder(
 
 ).to(device)
 
+total_params = sum(p.numel() for p in model.parameters())
+print(f"Total parameters: {total_params}")
+
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=hyperparameters['batch_size'])
 val_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=hyperparameters['batch_size'])
