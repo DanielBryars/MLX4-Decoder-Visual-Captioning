@@ -29,6 +29,21 @@ ts = datetime.datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
 print(f"Using device:{device}")
 set_seed()
 
+
+
+
+class ModelFactory:
+    def CreateModelFromHyperparameters(self, hyperparameters, vocab_size):
+        D_txt = 512
+        
+        return CaptionTransformerDecoder(
+            embed_dim=D_txt,
+            vocab_size=vocab_size,
+            num_layers=hyperparameters['num_layers'], 
+            num_heads=hyperparameters['num_heads'], 
+            dropout=hyperparameters['dropout']
+        )
+
 hyperparameters = {
         'learning_rate': 1e-4,
         'weight_decay': 0.01,
