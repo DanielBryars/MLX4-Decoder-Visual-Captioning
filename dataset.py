@@ -67,6 +67,9 @@ if __name__ == "__main__":
         "caption": example["caption"]
     }
 )
+    
+    sampl_dataset = train_data
+
 
     sample_indexes = random.sample(range(len(sampl_dataset)), num_images)
     captions_dict = {}
