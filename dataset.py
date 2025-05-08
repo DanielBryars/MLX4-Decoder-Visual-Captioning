@@ -38,39 +38,56 @@ if __name__ == "__main__":
     import torchvision.transforms.functional as TF
     import json
 
+    num_images = 10
     output_dir = 'test_images'
-
-    print(f"len(train_dataset):{len(train_data)}")
-    print(f"len(test_data):{len(test_data)}")
-    
     os.makedirs(output_dir, exist_ok=True)
 
-    def save_random_images_with_captions(dataset, split_name):
-        sampled = random.sample(range(len(dataset)), 10)
-        captions_dict = {}
+    # Load dataset inside __main__
+    sampl_dataset = builder.as_dataset(split="test")
 
-        n_captions = 0
-        n_images = 0
-        for idx, sample_idx in enumerate(sampled):
-            sample = dataset[sample_idx]
-            image_tensor = sample["image"]
-            captions = sample["caption"]  
+    sample_clip_preprocess = transforms.Compose([
+        transforms.Resize(224, interpolation=transforms.InterpolationMode.BICUBIC),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.48145466, 0.4578275, 0.40821073],
+            std=[0.26862954, 0.26130258, 0.27577711]
+        ),
+    ])
 
-            n_images +=1
-            n_captions += len(captions)
+#    sampl_dataset = dataset.with_transform(
+#        lambda example: {
+#            "image": sample_clip_preprocess(example["image"]),
+#            "caption": example["caption"]
+#        })
+    
+    sampl_dataset = dataset.with_transform(
+    lambda example: {
+        "image": clip_preprocess(example["image"][0]) if isinstance(example["image"], list) else clip_preprocess(example["image"]),
+        "caption": example["caption"]
+    }
+)
 
-            img = TF.to_pil_image(image_tensor)
-            filename = f"{split_name}_{idx}.png"
-            img.save(os.path.join(output_dir, filename))
+    sample_indexes = random.sample(range(len(sampl_dataset)), num_images)
+    captions_dict = {}
 
-            captions_dict[filename] = captions
+    n_captions = 0
+    n_images = 0
+    for idx, sample_idx in enumerate(sample_indexes):
+        row = sampl_dataset[sample_idx]
+        image_tensor = row["image"]
+        captions = row["caption"]
 
-        print(f"{n_images} Images and {n_captions} captions saved to {output_dir}")
+        n_images +=1
+        n_captions += len(captions)
 
-        return captions_dict
+        img = TF.to_pil_image(image_tensor)
+        filename = f"{idx}.png"
+        img.save(os.path.join(output_dir, filename))
 
-    train_captions = save_random_images_with_captions(train_data, "train")
-    test_captions = save_random_images_with_captions(test_data, "test")
+        captions_dict[filename] = captions
 
     with open(os.path.join(output_dir, "captions.json"), "w") as f:
-        json.dump({"train": train_captions, "test": test_captions}, f, indent=2)
+        json.dump(captions, f, indent=2)
+
+    print(f"{n_images} Images and {n_captions} captions saved to '{output_dir}'")
