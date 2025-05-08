@@ -6,6 +6,7 @@ from transformers import CLIPModel, CLIPTokenizer
 from torch.utils.data import DataLoader
 from FlickrDataset import FlickrDataset
 from CaptionTransformerDecoder import CaptionTransformerDecoder
+import ModelFactory
 from ProjectEmbeddingDimension import ProjectEmbeddingDimension
 import wandb
 import torch
@@ -29,21 +30,6 @@ ts = datetime.datetime.now().strftime('%Y_%m_%d__%H_%M_%S')
 print(f"Using device:{device}")
 set_seed()
 
-
-
-
-class ModelFactory:
-    def CreateModelFromHyperparameters(self, hyperparameters, vocab_size):
-        D_txt = 512
-        
-        return CaptionTransformerDecoder(
-            embed_dim=D_txt,
-            vocab_size=vocab_size,
-            num_layers=hyperparameters['num_layers'], 
-            num_heads=hyperparameters['num_heads'], 
-            dropout=hyperparameters['dropout']
-        )
-
 hyperparameters = {
         'learning_rate': 1e-4,
         'weight_decay': 0.01,
@@ -66,14 +52,7 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 clip_model.to(device)
 
-model = CaptionTransformerDecoder(
-    embed_dim=D_txt,
-    vocab_size=tokenizer.vocab_size,
-    num_layers=hyperparameters['num_layers'], 
-    num_heads=hyperparameters['num_heads'], 
-    dropout=hyperparameters['dropout']
-
-).to(device)
+model = ModelFactory().CreateModelFromHyperparameters(hyperparameters).to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 print(f"Total parameters: {total_params}")

@@ -1,4 +1,5 @@
-
+import torch
+from CaptionTransformerDecoder import CaptionTransformerDecoder
 
 class ModelFactory:
     def CreateModelFromHyperparameters(self, hyperparameters, vocab_size):
@@ -11,3 +12,13 @@ class ModelFactory:
             num_heads=hyperparameters['num_heads'], 
             dropout=hyperparameters['dropout']
         )
+    
+    def CreateFromSnapshot(self, snapshot_path, vocab_size):
+        checkpoint = torch.load(snapshot_path, weights_only=True)
+        
+        hyperparameters = checkpoint['hyperparameters']
+        
+        model = self.CreateModelFromHyperparameters(hyperparameters, vocab_size)        
+        model.load_state_dict(checkpoint['model'])
+        
+        return model
