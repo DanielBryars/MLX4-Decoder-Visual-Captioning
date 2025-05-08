@@ -72,20 +72,29 @@ def train_one_epoch(
         images = batch["image"].to(device)
         captions = batch["caption"]
 
-        for caption_texts in captions:
-            loss = ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts)
-            loss.backward()
-            optimizer.step()
-            optimizer.zero_grad()
+        batch_size = images.shape[0]
 
-            wandb.log({'train/loss': loss.item()}, step=step)
-            loop.set_postfix(loss=f"{loss.item():.4f}")
-            step += 1
+        flat_captions = []
+        num_captions_per_image = len(captions)
+        
+        for image_idx in range(batch_size):
+            for caption_idx in range(len(captions)):
+                flat_captions.append(captions[caption_idx][image_idx])
+            
+        images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
+
+        loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+
+        wandb.log({'train/loss': loss.item()}, step=step)
+        loop.set_postfix(loss=f"{loss.item():.4f}")
+        step += 1
 
     return step
 
 def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts):
-    batch_size = images.shape[0]
     tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
     caption_token_ids = tokenised["input_ids"]
 
@@ -116,9 +125,10 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
     #print(f"labels.shape: {labels.shape}")
     #print(f"labels_reshaped.shape: {labels_reshaped.shape}")
 
-    loss = nn.CrossEntropyLoss()(
-            logits_reshaped,
-            labels_reshaped)
+    pad_id = tokeniser.pad_token_id
+    loss_fn = nn.CrossEntropyLoss(ignore_index=pad_id)
+
+    loss = loss_fn(logits_reshaped, labels_reshaped)
     
     return loss
 

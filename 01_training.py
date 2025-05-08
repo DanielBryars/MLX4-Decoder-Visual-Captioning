@@ -6,7 +6,7 @@ from transformers import CLIPModel, CLIPTokenizer
 from torch.utils.data import DataLoader
 from FlickrDataset import FlickrDataset
 from CaptionTransformerDecoder import CaptionTransformerDecoder
-import ModelFactory
+from ModelFactory import ModelFactory
 from ProjectEmbeddingDimension import ProjectEmbeddingDimension
 import wandb
 import torch
@@ -52,11 +52,10 @@ tokenizer = CLIPTokenizer.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 clip_model.to(device)
 
-model = ModelFactory().CreateModelFromHyperparameters(hyperparameters).to(device)
+model = ModelFactory().CreateModelFromHyperparameters(hyperparameters, tokenizer.vocab_size).to(device)
 
 total_params = sum(p.numel() for p in model.parameters())
 print(f"Total parameters: {total_params}")
-
 
 train_loader = torch.utils.data.DataLoader(dataset=train_data, batch_size=hyperparameters['batch_size'])
 val_loader = torch.utils.data.DataLoader(dataset=test_data, batch_size=hyperparameters['batch_size'])
