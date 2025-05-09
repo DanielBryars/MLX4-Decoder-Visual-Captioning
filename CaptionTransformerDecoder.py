@@ -26,6 +26,14 @@ class CaptionTransformerDecoder(nn.Module):
 
         self.output_proj = nn.Linear(embed_dim, vocab_size)
 
+    def make_combined_mask(image_len, caption_len, device):
+        total_len = image_len + caption_len
+        mask = torch.full((total_len, total_len), float('-inf')).to(device)
+        mask[:image_len, :] = 0  # image tokens attend to all
+        mask[image_len:, :image_len] = 0  # caption tokens attend to image tokens
+        mask[image_len:, image_len:] = torch.triu(torch.full((caption_len, caption_len), float('-inf')), 1)
+        return mask
+
     def forward(self, image_embeds, caption_embeds):
         
         #
@@ -59,6 +67,8 @@ class CaptionTransformerDecoder(nn.Module):
         decoder_input = decoder_input.transpose(0, 1)
 
         # Create causal mask
+        tgt_mask = self.make_combined_mask(image_len=image_embeds.size(1), caption_len=caption_embeds.size(1), device=device)
+
         tgt_mask = nn.Transformer.generate_square_subsequent_mask(seq_len).to(device)
 
         # Dummy memory (not used here — purely decoder-only)
@@ -74,4 +84,4 @@ class CaptionTransformerDecoder(nn.Module):
         # Discard logits for image and BOS tokens; return only caption token logits
         #return logits[:, image_embeds.size(1) + 1:, :]  # [B, T, V]
         return logits[:, image_embeds.size(1):, :]
-    #
+    #    
