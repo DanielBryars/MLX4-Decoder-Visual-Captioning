@@ -138,6 +138,9 @@ class CaptionTransformerDecoder(nn.Module):
 
         save_attention_mask(tgt_mask, filename="tgt_mask.png", title="Combined Decoder Mask")
 
+        default_causal = torch.triu(torch.ones(seq_len, seq_len), diagonal=1).to(dtype=torch.bool)
+        save_attention_mask(default_causal, filename="default_causal_mask.png", title="Default Decoder Mask")
+
         # Dummy memory (not used here — purely decoder-only)
         dummy_memory = torch.zeros(1, B, D, device=device)
 
