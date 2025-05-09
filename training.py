@@ -120,12 +120,12 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
     attention_mask = tokenised["attention_mask"]   # [B, T+1]
 
     # 🔍 Debug: print a few examples
-    for i in range(min(10, len(caption_texts))):
-        print(f"\n--- Caption {i+1} ---")
-        print(f"Original         : {caption_texts[i]}")
-        print(f"Input IDs        : {input_ids[i].tolist()}")
-        print(f"Decoded (all)    : {tokeniser.decode(input_ids[i], skip_special_tokens=False)}")
-        print(f"Decoded (no spec): {tokeniser.decode(input_ids[i], skip_special_tokens=True)}")
+#    for i in range(min(10, len(caption_texts))):
+#        print(f"\n--- Caption {i+1} ---")
+#        print(f"Original         : {caption_texts[i]}")
+#        print(f"Input IDs        : {input_ids[i].tolist()}")
+#        print(f"Decoded (all)    : {tokeniser.decode(input_ids[i], skip_special_tokens=False)}")
+#        print(f"Decoded (no spec): {tokeniser.decode(input_ids[i], skip_special_tokens=True)}")
 
     # Prepare inputs and labels for next-token prediction
     inputs_for_embedding = input_ids[:, :-1]       # [B, T]
@@ -147,20 +147,36 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
     # Sanity check
     assert logits.shape[:2] == labels.shape, f"Mismatch: logits {logits.shape}, labels {labels.shape}"
 
+    
     with torch.no_grad():
-        # logits: [B, T, V]
         probs = torch.softmax(logits, dim=-1)  # [B, T, V]
-
         B, T, V = probs.shape
-        num_print = min(5, T)
 
-        for t in range(num_print):
-            topk_probs, topk_indices = probs[0, t].topk(5)
-            topk_tokens = [tokeniser.decode([idx.item()]) for idx in topk_indices]
+        table = wandb.Table(columns=["step", "true_token", "true_id", "top1", "top1_prob", "top5", "top5_probs"])
 
-            print(f"\nStep {t + 1}")
-            print(f"Top-5 tokens: {topk_tokens}")
-            print(f"Probs     : {[round(p.item(), 4) for p in topk_probs]}")
+        for b in range(min(B, 1)):  # Limit to first example for clarity
+            true_ids = labels[b].tolist()
+            for t in range(T):
+                true_id = true_ids[t]
+                if true_id == tokeniser.pad_token_id:
+                    continue  # Skip padding positions
+
+                true_tok = tokeniser.decode([true_id])
+                topk_probs, topk_ids = probs[b, t].topk(5)
+                topk_tokens = [tokeniser.decode([i.item()]) for i in topk_ids]
+                topk_probs = [round(p.item(), 4) for p in topk_probs]
+                
+                table.add_data(
+                    t,
+                    true_tok,
+                    true_id,
+                    topk_tokens[0],
+                    topk_probs[0],
+                    topk_tokens,
+                    topk_probs
+                )
+
+        wandb.log({"token_predictions": table})
 
     # Compute loss
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokeniser.pad_token_id)
