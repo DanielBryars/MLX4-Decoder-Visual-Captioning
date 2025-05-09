@@ -49,7 +49,7 @@ def evaluate(
                 
             images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
 
-            loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions)
+            loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions, step)
 
             total_loss += loss
             total_batches += 1
@@ -94,7 +94,7 @@ def train_one_epoch(
             
         images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
 
-        loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions)
+        loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions, step)
         loss.backward()
         optimizer.step()
         optimizer.zero_grad()
@@ -106,7 +106,7 @@ def train_one_epoch(
     return step
 
 
-def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts):
+def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts, step):
     # Tokenise with BOS and EOS (CLIP adds BOS automatically)
     tokenised = tokeniser(
         caption_texts,
@@ -147,36 +147,36 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
     # Sanity check
     assert logits.shape[:2] == labels.shape, f"Mismatch: logits {logits.shape}, labels {labels.shape}"
 
-    
-    with torch.no_grad():
-        probs = torch.softmax(logits, dim=-1)  # [B, T, V]
-        B, T, V = probs.shape
+    if step is not None:
+        with torch.no_grad():
+            probs = torch.softmax(logits, dim=-1)  # [B, T, V]
+            B, T, V = probs.shape
 
-        table = wandb.Table(columns=["step", "true_token", "true_id", "top1", "top1_prob", "top5", "top5_probs"])
+            table = wandb.Table(columns=["step", "true_token", "true_id", "top1", "top1_prob", "top5", "top5_probs"])
 
-        for b in range(min(B, 1)):  # Limit to first example for clarity
-            true_ids = labels[b].tolist()
-            for t in range(T):
-                true_id = true_ids[t]
-                if true_id == tokeniser.pad_token_id:
-                    continue  # Skip padding positions
+            for b in range(min(B, 1)):  # Limit to first example for clarity
+                true_ids = labels[b].tolist()
+                for t in range(T):
+                    true_id = true_ids[t]
+                    if true_id == tokeniser.pad_token_id:
+                        continue  # Skip padding positions
 
-                true_tok = tokeniser.decode([true_id])
-                topk_probs, topk_ids = probs[b, t].topk(5)
-                topk_tokens = [tokeniser.decode([i.item()]) for i in topk_ids]
-                topk_probs = [round(p.item(), 4) for p in topk_probs]
-                
-                table.add_data(
-                    t,
-                    true_tok,
-                    true_id,
-                    topk_tokens[0],
-                    topk_probs[0],
-                    topk_tokens,
-                    topk_probs
-                )
+                    true_tok = tokeniser.decode([true_id])
+                    topk_probs, topk_ids = probs[b, t].topk(5)
+                    topk_tokens = [tokeniser.decode([i.item()]) for i in topk_ids]
+                    topk_probs = [round(p.item(), 4) for p in topk_probs]
+                    
+                    table.add_data(
+                        t,
+                        true_tok,
+                        true_id,
+                        topk_tokens[0],
+                        topk_probs[0],
+                        topk_tokens,
+                        topk_probs
+                    )
 
-        wandb.log({"token_predictions": table})
+            wandb.log({"token_predictions": table}, step)
 
     # Compute loss
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokeniser.pad_token_id)

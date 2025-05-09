@@ -65,6 +65,9 @@ class CaptionTransformerDecoder(nn.Module):
             diagonal=1
         )
 
+        # Make top right blocked
+        mask[:image_len, :] = 1
+
         # All other attention (image tokens attend to all; captions to image) is allowed (False)
         return mask
 
