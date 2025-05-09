@@ -41,7 +41,7 @@ hyperparameters = {
         'num_epochs':10
 }
 
-wandb.init(project='MLX7-W4-VIT-CAPTIONS-102', config=hyperparameters)
+wandb.init(project='MLX7-W4-VIT-CAPTIONS-103', config=hyperparameters)
 config = wandb.config
 
 D_img = 768

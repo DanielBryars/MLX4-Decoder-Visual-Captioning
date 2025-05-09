@@ -26,7 +26,7 @@ class CaptionTransformerDecoder(nn.Module):
 
         self.output_proj = nn.Linear(embed_dim, vocab_size)
 
-    def make_combined_mask(image_len, caption_len, device):
+    def make_combined_mask(self, image_len, caption_len, device):
         total_len = image_len + caption_len
         mask = torch.full((total_len, total_len), float('-inf')).to(device)
         mask[:image_len, :] = 0  # image tokens attend to all
