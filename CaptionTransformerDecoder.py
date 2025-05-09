@@ -69,8 +69,6 @@ class CaptionTransformerDecoder(nn.Module):
         # Create causal mask
         tgt_mask = self.make_combined_mask(image_len=image_embeds.size(1), caption_len=caption_embeds.size(1), device=device)
 
-        tgt_mask = nn.Transformer.generate_square_subsequent_mask(seq_len).to(device)
-
         # Dummy memory (not used here — purely decoder-only)
         dummy_memory = torch.zeros(1, B, D, device=device)
 

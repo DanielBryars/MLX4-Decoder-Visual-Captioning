@@ -108,6 +108,7 @@ def train_one_epoch(
 def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts):
     tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
     caption_token_ids = tokenised["input_ids"]
+    attention_mask = tokenised['attention_mask'] #how do I use this?
 
     #clip_bos_embed_single = clip_model.text_model.embeddings.token_embedding.weight[0]  # TODO Fix this, assuming 0 looks very brittle to me
     #clip_bos_embed = clip_bos_embed_single.unsqueeze(0).unsqueeze(0)

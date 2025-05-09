@@ -35,13 +35,13 @@ hyperparameters = {
         'weight_decay': 0.01,
         'batch_size': 12,
         'patience': 3,
-        'num_layers': 6,
-        'num_heads':8,
+        'num_layers': 4,
+        'num_heads':2,
         'dropout':0.1,
-        'num_epochs':20
+        'num_epochs':10
 }
 
-wandb.init(project='MLX7-W4-VIT-CAPTIONS-101', config=hyperparameters)
+wandb.init(project='MLX7-W4-VIT-CAPTIONS-102', config=hyperparameters)
 config = wandb.config
 
 D_img = 768
