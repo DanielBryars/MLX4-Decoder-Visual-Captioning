@@ -13,18 +13,17 @@ import matplotlib.pyplot as plt
 def save_attention_mask(mask, filename="mask.png", title="Attention Mask"):
     import matplotlib.pyplot as plt
 
-    # Accept 2D [seq_len, seq_len] masks directly
-    if mask.dim() == 2:
-        data = (~torch.isinf(mask)).cpu().numpy()
-    else:
-        raise ValueError("Expected 2D attention mask")
+    if mask.dtype != torch.bool:
+        raise ValueError("Expected boolean mask")
+
+    data = mask.cpu().numpy().astype(int)  # True → 1, False → 0
 
     plt.figure(figsize=(6, 6))
     plt.imshow(data, cmap='gray', aspect='auto', interpolation='nearest')
     plt.title(title)
     plt.xlabel("Key Position")
     plt.ylabel("Query Position")
-    plt.colorbar(label='Attention Allowed')
+    plt.colorbar(label='Mask: 1 = Blocked, 0 = Allowed')
     plt.tight_layout()
     plt.savefig(filename)
     plt.close()
