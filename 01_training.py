@@ -33,7 +33,7 @@ set_seed()
 hyperparameters = {
         'learning_rate': 1e-4,
         'weight_decay': 0.01,
-        'batch_size': 12,
+        'batch_size': 64,
         'patience': 3,
         'num_layers': 4,
         'num_heads':2,
@@ -41,7 +41,7 @@ hyperparameters = {
         'num_epochs':10
 }
 
-wandb.init(project='MLX7-W4-VIT-CAPTIONS-105', config=hyperparameters)
+wandb.init(project='MLX7-W4-VIT-CAPTIONS-106', config=hyperparameters)
 config = wandb.config
 
 D_img = 768
