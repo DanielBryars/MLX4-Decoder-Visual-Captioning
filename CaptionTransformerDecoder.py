@@ -7,6 +7,52 @@ from torch.utils.data import DataLoader
 from FlickrDataset import FlickrDataset
 from ProjectEmbeddingDimension import ProjectEmbeddingDimension
 
+
+import matplotlib.pyplot as plt
+
+def save_attention_mask(mask, filename="mask.png", title="Attention Mask"):
+    import matplotlib.pyplot as plt
+
+    # Accept 2D [seq_len, seq_len] masks directly
+    if mask.dim() == 2:
+        data = (~torch.isinf(mask)).cpu().numpy()
+    else:
+        raise ValueError("Expected 2D attention mask")
+
+    plt.figure(figsize=(6, 6))
+    plt.imshow(data, cmap='gray', aspect='auto', interpolation='nearest')
+    plt.title(title)
+    plt.xlabel("Key Position")
+    plt.ylabel("Query Position")
+    plt.colorbar(label='Attention Allowed')
+    plt.tight_layout()
+    plt.savefig(filename)
+    plt.close()
+
+
+
+def show_attention_mask(mask, title="Attention Mask"):
+    """
+    mask: Tensor of shape [B, T], values 0 (masked) or 1 (unmasked)
+    """
+    # Use the first example in the batch
+    if mask.dim() == 2:
+        data = mask[0].cpu().numpy()
+    elif mask.dim() == 3:
+        data = mask[0, :, :].cpu().numpy()
+    else:
+        raise ValueError("Mask must be 2D or 3D tensor")
+
+    plt.figure(figsize=(6, 4))
+    plt.imshow(data, cmap='gray', aspect='auto', interpolation='nearest')
+    plt.title(title)
+    plt.xlabel("Sequence Position")
+    plt.ylabel("Sequence Position" if mask.dim() == 3 else "Mask")
+    plt.colorbar(label='Attention Allowed (1) or Blocked (0)')
+    plt.tight_layout()
+    plt.show()
+
+
 class CaptionTransformerDecoder(nn.Module):
     def __init__(self, 
                  embed_dim,
@@ -27,12 +73,24 @@ class CaptionTransformerDecoder(nn.Module):
         self.output_proj = nn.Linear(embed_dim, vocab_size)
 
     def make_combined_mask(self, image_len, caption_len, device):
+        """
+        Returns a boolean mask of shape [total_len, total_len]
+        True = mask (disallow attention), False = allow
+        """
         total_len = image_len + caption_len
-        mask = torch.full((total_len, total_len), float('-inf')).to(device)
-        mask[:image_len, :] = 0  # image tokens attend to all
-        mask[image_len:, :image_len] = 0  # caption tokens attend to image tokens
-        mask[image_len:, image_len:] = torch.triu(torch.full((caption_len, caption_len), float('-inf')), 1)
+
+        # Start with all allowed
+        mask = torch.zeros((total_len, total_len), dtype=torch.bool, device=device)
+
+        # Causal mask for caption → caption (upper triangle, excluding diagonal)
+        mask[image_len:, image_len:] = torch.triu(
+            torch.ones((caption_len, caption_len), dtype=torch.bool, device=device),
+            diagonal=1
+        )
+
+        # All other attention (image tokens attend to all; captions to image) is allowed (False)
         return mask
+
 
     def forward(self, image_embeds, caption_embeds, caption_attention_mask):
         
@@ -78,6 +136,8 @@ class CaptionTransformerDecoder(nn.Module):
 
         # Create causal mask
         tgt_mask = self.make_combined_mask(image_len=image_embeds.size(1), caption_len=caption_embeds.size(1), device=device)
+
+        save_attention_mask(tgt_mask, filename="tgt_mask.png", title="Combined Decoder Mask")
 
         # Dummy memory (not used here — purely decoder-only)
         dummy_memory = torch.zeros(1, B, D, device=device)

@@ -105,7 +105,48 @@ def train_one_epoch(
 
     return step
 
+
 def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_texts):
+    # Tokenise with BOS and EOS (CLIP adds BOS automatically)
+    tokenised = tokeniser(
+        caption_texts,
+        return_tensors="pt",
+        padding="max_length",
+        truncation=True,
+        add_special_tokens=True
+    ).to(device)
+
+    input_ids = tokenised["input_ids"]             # [B, T+1]
+    attention_mask = tokenised["attention_mask"]   # [B, T+1]
+
+    # Prepare inputs and labels for next-token prediction
+    inputs_for_embedding = input_ids[:, :-1]       # [B, T]
+    labels = input_ids[:, 1:]                      # [B, T]
+    attention_mask = attention_mask[:, :-1]        # [B, T] (match caption_embeds)
+
+    # Get text embeddings (no gradient needed)
+    with torch.no_grad():
+        caption_embeddings = clip_model.text_model.embeddings(input_ids=inputs_for_embedding)  # [B, T, D]
+        image_embeddings = clip_model.vision_model.embeddings(images)  # [B, 50, 768]
+
+    # Forward through decoder
+    logits = model(
+        image_embeddings,              # [B, 50, 768]
+        caption_embeddings,            # [B, T, 512]
+        caption_attention_mask=attention_mask  # [B, T]
+    )  # returns [B, T, V]
+
+    # Sanity check
+    assert logits.shape[:2] == labels.shape, f"Mismatch: logits {logits.shape}, labels {labels.shape}"
+
+    # Compute loss
+    loss_fn = nn.CrossEntropyLoss(ignore_index=tokeniser.pad_token_id)
+    loss = loss_fn(logits.reshape(-1, logits.size(-1)), labels.reshape(-1))
+
+    return loss
+
+
+def ForwardThroughModelOLD(model, tokeniser, clip_model, device, images, caption_texts):
     tokenised = tokeniser(caption_texts, return_tensors="pt", padding="max_length", truncation=True).to(device)
     caption_token_ids = tokenised["input_ids"]
     attention_mask = tokenised['attention_mask'] #how do I use this?
