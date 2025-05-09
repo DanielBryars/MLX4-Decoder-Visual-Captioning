@@ -34,7 +34,7 @@ class CaptionTransformerDecoder(nn.Module):
         mask[image_len:, image_len:] = torch.triu(torch.full((caption_len, caption_len), float('-inf')), 1)
         return mask
 
-    def forward(self, image_embeds, caption_embeds):
+    def forward(self, image_embeds, caption_embeds, caption_attention_mask):
         
         #
         """
@@ -44,6 +44,16 @@ class CaptionTransformerDecoder(nn.Module):
         Returns:
             logits: [B, T, vocab_size]
         """
+
+
+        B, T = caption_attention_mask.shape
+        device = caption_attention_mask.device
+        padding_mask = torch.cat([
+            torch.zeros((B, image_embeds.size(1)), dtype=torch.bool, device=device),  # no mask on image tokens
+            ~caption_attention_mask.bool()  # invert to match key_padding_mask expectations
+        ], dim=1)  # [B, S]
+
+
         #print(f"image_embeds.shape:{image_embeds.shape}")
         image_embeds = self.image_proj(image_embeds)
         #print(f"image_embeds.shape:{image_embeds.shape}")
@@ -72,8 +82,14 @@ class CaptionTransformerDecoder(nn.Module):
         # Dummy memory (not used here — purely decoder-only)
         dummy_memory = torch.zeros(1, B, D, device=device)
 
-        # Decoder forward
-        output = self.transformer_decoder(decoder_input, dummy_memory, tgt_mask=tgt_mask)  # [S, B, D]
+        # Decoder forward        
+        output = self.transformer_decoder(
+           decoder_input,
+            dummy_memory,
+            tgt_mask=tgt_mask,
+            tgt_key_padding_mask=padding_mask
+        )
+
         output = output.transpose(0, 1)  # [B, S, D]
 
         # Predict token logits
