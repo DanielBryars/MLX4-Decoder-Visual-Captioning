@@ -26,31 +26,9 @@ def save_attention_mask(mask, filename="mask.png", title="Attention Mask"):
     plt.colorbar(label='Mask: 1 = Blocked, 0 = Allowed')
     plt.tight_layout()
     plt.savefig(filename)
+    #plot.show()
     plt.close()
-
-
-
-def show_attention_mask(mask, title="Attention Mask"):
-    """
-    mask: Tensor of shape [B, T], values 0 (masked) or 1 (unmasked)
-    """
-    # Use the first example in the batch
-    if mask.dim() == 2:
-        data = mask[0].cpu().numpy()
-    elif mask.dim() == 3:
-        data = mask[0, :, :].cpu().numpy()
-    else:
-        raise ValueError("Mask must be 2D or 3D tensor")
-
-    plt.figure(figsize=(6, 4))
-    plt.imshow(data, cmap='gray', aspect='auto', interpolation='nearest')
-    plt.title(title)
-    plt.xlabel("Sequence Position")
-    plt.ylabel("Sequence Position" if mask.dim() == 3 else "Mask")
-    plt.colorbar(label='Attention Allowed (1) or Blocked (0)')
-    plt.tight_layout()
-    plt.show()
-
+    
 
 class CaptionTransformerDecoder(nn.Module):
     def __init__(self, 
@@ -93,6 +71,8 @@ class CaptionTransformerDecoder(nn.Module):
 
     def forward(self, image_embeds, caption_embeds, caption_attention_mask):
         
+
+
         #
         """
         image_embeds: [B, 50, 768]
@@ -143,6 +123,10 @@ class CaptionTransformerDecoder(nn.Module):
 
         # Dummy memory (not used here — purely decoder-only)
         dummy_memory = torch.zeros(1, B, D, device=device)
+
+        save_attention_mask(~caption_attention_mask.bool() , filename="caption_attention_mask_only.png", title="Padding Mask Text ONLY")
+
+        save_attention_mask(padding_mask, filename="padding_mask.png", title="Padding Mask")
 
         # Decoder forward        
         output = self.transformer_decoder(

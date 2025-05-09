@@ -119,6 +119,14 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
     input_ids = tokenised["input_ids"]             # [B, T+1]
     attention_mask = tokenised["attention_mask"]   # [B, T+1]
 
+    # 🔍 Debug: print a few examples
+    for i in range(min(10, len(caption_texts))):
+        print(f"\n--- Caption {i+1} ---")
+        print(f"Original         : {caption_texts[i]}")
+        print(f"Input IDs        : {input_ids[i].tolist()}")
+        print(f"Decoded (all)    : {tokeniser.decode(input_ids[i], skip_special_tokens=False)}")
+        print(f"Decoded (no spec): {tokeniser.decode(input_ids[i], skip_special_tokens=True)}")
+
     # Prepare inputs and labels for next-token prediction
     inputs_for_embedding = input_ids[:, :-1]       # [B, T]
     labels = input_ids[:, 1:]                      # [B, T]
@@ -138,6 +146,21 @@ def ForwardThroughModel(model, tokeniser, clip_model, device, images, caption_te
 
     # Sanity check
     assert logits.shape[:2] == labels.shape, f"Mismatch: logits {logits.shape}, labels {labels.shape}"
+
+    with torch.no_grad():
+        # logits: [B, T, V]
+        probs = torch.softmax(logits, dim=-1)  # [B, T, V]
+
+        B, T, V = probs.shape
+        num_print = min(5, T)
+
+        for t in range(num_print):
+            topk_probs, topk_indices = probs[0, t].topk(5)
+            topk_tokens = [tokeniser.decode([idx.item()]) for idx in topk_indices]
+
+            print(f"\nStep {t + 1}")
+            print(f"Top-5 tokens: {topk_tokens}")
+            print(f"Probs     : {[round(p.item(), 4) for p in topk_probs]}")
 
     # Compute loss
     loss_fn = nn.CrossEntropyLoss(ignore_index=tokeniser.pad_token_id)
