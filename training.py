@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import random
 import numpy as np
 import torch.nn as nn
+import random
+
 
 def set_seed(seed=42):
     random.seed(seed)
@@ -42,13 +44,15 @@ def evaluate(
 
             flat_captions = []
             num_captions_per_image = len(captions)
-            
-            for image_idx in range(batch_size):
-                for caption_idx in range(len(captions)):
-                    flat_captions.append(captions[caption_idx][image_idx])
-                
-            images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
 
+            #just pick a random image for now            
+            for image_idx in range(batch_size):
+                caption_idx = random.randint(0, 4)
+                flat_captions.append(captions[caption_idx][image_idx])
+
+            #images_repeated = images.repeat_interleave(num_captions_per_image, dim=0)
+
+            images_repeated = images
             loss = ForwardThroughModel(model, tokeniser, clip_model, device, images_repeated, flat_captions, step)
 
             total_loss += loss
